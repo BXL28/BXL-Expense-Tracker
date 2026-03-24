@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Pencil, RefreshCw, ScanSearch, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import {
+  getNextWeeklyDigestRunUtc,
+  summarizeWeeklyDigestCron,
+  WEEKLY_DIGEST_CRON_SCHEDULE,
+} from "@/lib/digest/digestCronSchedule";
 
 type Category =
   | "Food"
@@ -58,6 +63,7 @@ export default function DashboardPage() {
   const [debugTitle, setDebugTitle] = useState("Debug output");
   const [digestSending, setDigestSending] = useState(false);
   const [digestMessage, setDigestMessage] = useState<string | null>(null);
+  const [digestScheduleTick, setDigestScheduleTick] = useState(0);
   const [monthlyBudget, setMonthlyBudget] = useState<number>(DEFAULT_MONTHLY_BUDGET);
   const [budgetInput, setBudgetInput] = useState<string>(String(DEFAULT_MONTHLY_BUDGET));
   const [savingBudget, setSavingBudget] = useState(false);
@@ -183,6 +189,35 @@ export default function DashboardPage() {
     () => transactions.filter((tx) => tx.status === "posted"),
     [transactions]
   );
+
+  useEffect(() => {
+    const id = window.setInterval(() => setDigestScheduleTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const digestScheduleInfo = useMemo(() => {
+    const now = new Date();
+    const next = getNextWeeklyDigestRunUtc(WEEKLY_DIGEST_CRON_SCHEDULE, now);
+    const summary = summarizeWeeklyDigestCron(WEEKLY_DIGEST_CRON_SCHEDULE);
+    if (!next) {
+      return {
+        summary,
+        localWhen: null as string | null,
+        utcWhen: null as string | null,
+      };
+    }
+    return {
+      summary,
+      localWhen: next.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      utcWhen: `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")} ${String(next.getUTCHours()).padStart(2, "0")}:${String(next.getUTCMinutes()).padStart(2, "0")} UTC`,
+    };
+  }, [digestScheduleTick]);
 
   const summary = useMemo(() => {
     const totalSpent = postedRows.reduce((sum, tx) => sum + tx.amount, 0);
@@ -511,11 +546,23 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {gmailConnected && lastSyncedAt && (
-          <p className="text-xs text-slate-500">
-            Last Gmail sync: {new Date(lastSyncedAt).toLocaleString()}
+        <div className="space-y-1 text-xs text-slate-500">
+          {gmailConnected && lastSyncedAt ? (
+            <p>Last Gmail sync: {new Date(lastSyncedAt).toLocaleString()}</p>
+          ) : null}
+          <p>
+            <span className="font-medium text-slate-600">Next digest email:</span>{" "}
+            {digestScheduleInfo.localWhen
+              ? `${digestScheduleInfo.localWhen} (${digestScheduleInfo.utcWhen})`
+              : "Estimate unavailable — verify cron in vercel.json."}{" "}
+            <span className="text-slate-400" title={WEEKLY_DIGEST_CRON_SCHEDULE}>
+              · {digestScheduleInfo.summary}
+            </span>
           </p>
-        )}
+          {gmailConnected === false ? (
+            <p className="text-amber-800/90">Connect Gmail to receive digest emails.</p>
+          ) : null}
+        </div>
 
         {syncMessage ? (
           <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
