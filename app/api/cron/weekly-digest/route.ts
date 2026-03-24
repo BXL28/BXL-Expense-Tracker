@@ -17,8 +17,11 @@ export async function GET(request: Request) {
 
   const range = getDigestDateRange();
   let sent = 0;
+  const failures: Array<{ user_id: string; email: string; error: string }> = [];
+  let attempted = 0;
 
   for (const connection of connections ?? []) {
+    attempted += 1;
     const metrics = await fetchWeeklyDigestMetrics(supabase, connection.user_id, range);
 
     try {
@@ -41,11 +44,28 @@ export async function GET(request: Request) {
       });
       await sendGmailMessage(gmail, connection.google_email, subject, body);
       sent += 1;
-    } catch {
-      // Continue processing other users; failures are surfaced in summary count.
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[weekly-digest] send failed", {
+        user_id: connection.user_id,
+        email: connection.google_email,
+        error: msg,
+      });
+      failures.push({
+        user_id: connection.user_id,
+        email: connection.google_email,
+        error: msg,
+      });
     }
   }
 
-  return NextResponse.json({ ok: true, sent, users: connections?.length ?? 0 });
+  return NextResponse.json({
+    ok: true,
+    attempted,
+    sent,
+    failed: failures.length,
+    users: connections?.length ?? 0,
+    failures,
+  });
 }
 

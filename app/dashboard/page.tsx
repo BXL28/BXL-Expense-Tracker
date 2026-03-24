@@ -202,20 +202,24 @@ export default function DashboardPage() {
     if (!next) {
       return {
         summary,
-        localWhen: null as string | null,
-        utcWhen: null as string | null,
+        ottawaWhen: null as string | null,
+        utcTooltip: null as string | null,
       };
     }
+    const ottawaWhen = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Toronto",
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    }).format(next);
+    const utcTooltip = `Same instant: ${next.toISOString().replace("T", " ").slice(0, 16)} UTC (Vercel cron uses UTC)`;
     return {
       summary,
-      localWhen: next.toLocaleString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-      utcWhen: `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")} ${String(next.getUTCHours()).padStart(2, "0")}:${String(next.getUTCMinutes()).padStart(2, "0")} UTC`,
+      ottawaWhen,
+      utcTooltip,
     };
   }, [digestScheduleTick]);
 
@@ -550,10 +554,10 @@ export default function DashboardPage() {
           {gmailConnected && lastSyncedAt ? (
             <p>Last Gmail sync: {new Date(lastSyncedAt).toLocaleString()}</p>
           ) : null}
-          <p>
+          <p title={digestScheduleInfo.utcTooltip ?? undefined}>
             <span className="font-medium text-slate-600">Next digest email:</span>{" "}
-            {digestScheduleInfo.localWhen
-              ? `${digestScheduleInfo.localWhen} (${digestScheduleInfo.utcWhen})`
+            {digestScheduleInfo.ottawaWhen
+              ? `${digestScheduleInfo.ottawaWhen} (Ottawa)`
               : "Estimate unavailable — verify cron in vercel.json."}{" "}
             <span className="text-slate-400" title={WEEKLY_DIGEST_CRON_SCHEDULE}>
               · {digestScheduleInfo.summary}
