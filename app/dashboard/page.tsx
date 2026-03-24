@@ -196,6 +196,7 @@ export default function DashboardPage() {
   }, []);
 
   const digestScheduleInfo = useMemo(() => {
+    void digestScheduleTick;
     const now = new Date();
     const next = getNextWeeklyDigestRunUtc(WEEKLY_DIGEST_CRON_SCHEDULE, now);
     const summary = summarizeWeeklyDigestCron(WEEKLY_DIGEST_CRON_SCHEDULE);
