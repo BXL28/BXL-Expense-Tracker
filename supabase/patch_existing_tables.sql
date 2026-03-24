@@ -95,6 +95,16 @@ before update on public.transactions for each row execute function public.set_up
 alter table public.profiles
   add column if not exists monthly_budget numeric(12,2) not null default 700 check (monthly_budget >= 0);
 
+alter table public.profiles add column if not exists digest_weekday smallint not null default 0;
+alter table public.profiles add column if not exists digest_hour smallint not null default 9;
+alter table public.profiles add column if not exists digest_minute smallint not null default 0;
+alter table public.profiles add column if not exists digest_timezone text not null default 'America/Toronto';
+
+-- -----------------------------------------------------------------------------
+-- gmail_connections: weekly digest dedupe (calendar day in user TZ)
+-- -----------------------------------------------------------------------------
+alter table public.gmail_connections add column if not exists weekly_digest_last_calendar_date text;
+
 -- -----------------------------------------------------------------------------
 -- gmail_connections: rename legacy columns to match the Next.js app (if present)
 -- If a RENAME fails, skip that block — your table may already match.

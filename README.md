@@ -10,6 +10,7 @@
    - [`supabase/transactions_only.sql`](supabase/transactions_only.sql) — `public.transactions`
    - [`supabase/gmail_connections_only.sql`](supabase/gmail_connections_only.sql) — `public.gmail_connections`
    - [`supabase/profiles_only.sql`](supabase/profiles_only.sql) — `public.profiles` (monthly budget; fixes **Could not find the table `public.profiles` in the schema cache**).
+   - [`supabase/profiles_digest_columns_only.sql`](supabase/profiles_digest_columns_only.sql) — adds digest schedule columns if you see **`digest_hour` / `digest_weekday` missing on `profiles`**.
 
 If you already ran **partial** SQL (e.g. `transactions` missing `unique (user_id, hash_id)` or RLS), run [`supabase/patch_existing_tables.sql`](supabase/patch_existing_tables.sql) to align with the app. The app expects `gmail_connections.google_email` and `refresh_token_encrypted` (not `email` / raw `refresh_token`).
 
@@ -44,7 +45,11 @@ Both routes require `x-cron-secret` header matching `CRON_SECRET`.
 
 **Daily ingest schedule:** `vercel.json` runs at **21:00 UTC** (`0 21 * * *`), which is **4:00 PM Eastern Standard Time** and **5:00 PM Eastern Daylight Time** — i.e. after 4 PM for most of the year in Eastern Canada. Vercel crons are UTC-only; change the cron expression if you use a different timezone.
 
-**Weekly digest schedule:** Currently **`*/15 * * * *`** (every 15 minutes) so you can verify email delivery quickly. This will send digest mail **often**; switch back to something like **`0 14 * * 0`** (weekly) in `vercel.json` once you are done testing. When you change `vercel.json`, update **`WEEKLY_DIGEST_CRON_SCHEDULE`** in [`lib/digest/digestCronSchedule.ts`](lib/digest/digestCronSchedule.ts) so the dashboard “next digest” label stays accurate.
+**Weekly digest schedule:** Vercel hits **`/api/cron/weekly-digest`** **once per day** at **`0 13 * * *`** (13:00 UTC). Each user chooses a **digest weekday** on the dashboard (timezone America/Toronto in app defaults); the job sends on that weekday when the daily run occurs, **at most once per calendar day** in that timezone (see `gmail_connections.weekly_digest_last_calendar_date`). A single global UTC time cannot match every local hour; hour/minute fields are stored but send timing is **weekday + daily UTC tick**. When you change `vercel.json`, update **`WEEKLY_DIGEST_CRON_SCHEDULE`** in [`lib/digest/digestCronSchedule.ts`](lib/digest/digestCronSchedule.ts) so the “next digest” estimate stays accurate.
+
+**Local dev:** `npm run dev` does **not** receive Vercel Cron. Use the dashboard **Send digest email** button, or call the debug API, to test sending locally.
+
+After pulling digest-schedule changes, run new columns from [`supabase/patch_existing_tables.sql`](supabase/patch_existing_tables.sql) (or full [`supabase/schema.sql`](supabase/schema.sql)): `profiles.digest_*` and `gmail_connections.weekly_digest_last_calendar_date`.
 
 ## How data gets into the dashboard
 

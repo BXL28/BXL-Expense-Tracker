@@ -2,7 +2,37 @@
  * Must match `vercel.json` → crons → path `/api/cron/weekly-digest` → schedule.
  * Vercel runs cron in UTC.
  */
-export const WEEKLY_DIGEST_CRON_SCHEDULE = "*/15 * * * *";
+export const WEEKLY_DIGEST_CRON_SCHEDULE = "0 13 * * *";
+
+/** Milliseconds between consecutive invocations for this schedule (for UI / simulations). */
+export function cronStepMilliseconds(schedule: string): number | null {
+  const fields = schedule.trim().split(/\s+/);
+  if (fields.length < 5) return null;
+  const [minF, hourF, domF, monF, dowF] = fields;
+
+  const everyMin = /^\*\/(\d+)$/.exec(minF);
+  if (everyMin && hourF === "*" && domF === "*" && monF === "*" && dowF === "*") {
+    const step = Number(everyMin[1]);
+    if (!Number.isFinite(step) || step < 1) return null;
+    return step * 60 * 1000;
+  }
+
+  if (domF === "*" && monF === "*" && dowF === "*" && /^\d+$/.test(minF) && /^\d+$/.test(hourF)) {
+    return 24 * 60 * 60 * 1000;
+  }
+
+  if (
+    domF === "*" &&
+    monF === "*" &&
+    /^\d+$/.test(minF) &&
+    /^\d+$/.test(hourF) &&
+    /^\d+$/.test(dowF)
+  ) {
+    return 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return null;
+}
 
 /** Next UTC instant the digest cron is expected to fire, or null if the expression is unsupported here. */
 export function getNextWeeklyDigestRunUtc(
@@ -19,6 +49,13 @@ export function getNextWeeklyDigestRunUtc(
     const step = Number(everyMin[1]);
     if (!Number.isFinite(step) || step < 1 || step > 59) return null;
     return nextUtcStepFromMidnight(now, step);
+  }
+
+  if (domF === "*" && monF === "*" && dowF === "*" && /^\d+$/.test(minF) && /^\d+$/.test(hourF)) {
+    const minute = Number(minF);
+    const hour = Number(hourF);
+    if (minute < 0 || minute > 59 || hour < 0 || hour > 23) return null;
+    return nextDailyUtc(now, hour, minute);
   }
 
   if (
@@ -54,6 +91,17 @@ function nextUtcStepFromMidnight(now: Date, stepMinutes: number): Date {
   return new Date(startOfUtcDay + nextMs);
 }
 
+function nextDailyUtc(now: Date, hour: number, minute: number): Date {
+  const y = now.getUTCFullYear();
+  const mo = now.getUTCMonth();
+  const day = now.getUTCDate();
+  let candidate = new Date(Date.UTC(y, mo, day, hour, minute, 0, 0));
+  if (candidate.getTime() <= now.getTime()) {
+    candidate = new Date(Date.UTC(y, mo, day + 1, hour, minute, 0, 0));
+  }
+  return candidate;
+}
+
 function nextWeeklyUtc(now: Date, targetDow: number, hour: number, minute: number): Date {
   const result = new Date(now);
   result.setUTCHours(hour, minute, 0, 0);
@@ -76,6 +124,12 @@ export function summarizeWeeklyDigestCron(
   if (everyMin && hourF === "*" && domF === "*" && monF === "*" && dowF === "*") {
     const n = everyMin[1];
     return `every ${n} minutes (UTC)`;
+  }
+  if (domF === "*" && monF === "*" && dowF === "*" && /^\d+$/.test(minF) && /^\d+$/.test(hourF)) {
+    const h = Number(hourF);
+    const m = Number(minF);
+    const pad = (x: number) => (x < 10 ? `0${x}` : String(x));
+    return `daily at ${pad(h)}:${pad(m)} UTC`;
   }
   if (
     domF === "*" &&

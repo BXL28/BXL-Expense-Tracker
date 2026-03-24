@@ -6,10 +6,14 @@ import { useRouter } from "next/navigation";
 import { Mail, Pencil, RefreshCw, ScanSearch, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
-  getNextWeeklyDigestRunUtc,
   summarizeWeeklyDigestCron,
   WEEKLY_DIGEST_CRON_SCHEDULE,
 } from "@/lib/digest/digestCronSchedule";
+import {
+  DEFAULT_DIGEST_PREFS,
+  getNextDigestWindowStart,
+  normalizeDigestPrefs,
+} from "@/lib/digest/userDigestSlot";
 
 type Category =
   | "Food"
@@ -40,6 +44,18 @@ type TxRow = {
 
 const DEFAULT_MONTHLY_BUDGET = 700;
 
+const DIGEST_DAY_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+];
+
+const DIGEST_MINUTE_OPTIONS: readonly number[] = Array.from({ length: 60 }, (_, i) => i);
+
 function toSelectCategory(c: string): Category {
   return CATEGORY_OPTIONS.includes(c as Category) ? (c as Category) : "Other";
 }
@@ -67,6 +83,10 @@ export default function DashboardPage() {
   const [monthlyBudget, setMonthlyBudget] = useState<number>(DEFAULT_MONTHLY_BUDGET);
   const [budgetInput, setBudgetInput] = useState<string>(String(DEFAULT_MONTHLY_BUDGET));
   const [savingBudget, setSavingBudget] = useState(false);
+  const [digestWeekday, setDigestWeekday] = useState(DEFAULT_DIGEST_PREFS.digestWeekday);
+  const [digestHour, setDigestHour] = useState(DEFAULT_DIGEST_PREFS.digestHour);
+  const [digestMinute, setDigestMinute] = useState(DEFAULT_DIGEST_PREFS.digestMinute);
+  const [savingDigestSchedule, setSavingDigestSchedule] = useState(false);
 
   const loadTransactions = useCallback(async () => {
     const {
@@ -128,7 +148,9 @@ export default function DashboardPage() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("monthly_budget")
+      .select(
+        "monthly_budget, digest_weekday, digest_hour, digest_minute, digest_timezone"
+      )
       .eq("id", session.user.id)
       .maybeSingle();
 
@@ -142,6 +164,16 @@ export default function DashboardPage() {
       Number.isFinite(value) && value >= 0 ? value : DEFAULT_MONTHLY_BUDGET;
     setMonthlyBudget(nextBudget);
     setBudgetInput(String(nextBudget));
+
+    const dPrefs = normalizeDigestPrefs({
+      digestWeekday: data?.digest_weekday as number | undefined,
+      digestHour: data?.digest_hour as number | undefined,
+      digestMinute: data?.digest_minute as number | undefined,
+      digestTimezone: (data?.digest_timezone as string | undefined) ?? undefined,
+    });
+    setDigestWeekday(dPrefs.digestWeekday);
+    setDigestHour(dPrefs.digestHour);
+    setDigestMinute(dPrefs.digestMinute);
   }, [supabase]);
 
   useEffect(() => {
@@ -198,17 +230,23 @@ export default function DashboardPage() {
   const digestScheduleInfo = useMemo(() => {
     void digestScheduleTick;
     const now = new Date();
-    const next = getNextWeeklyDigestRunUtc(WEEKLY_DIGEST_CRON_SCHEDULE, now);
+    const prefs = normalizeDigestPrefs({
+      digestWeekday,
+      digestHour,
+      digestMinute,
+      digestTimezone: DEFAULT_DIGEST_PREFS.digestTimezone,
+    });
+    const next = getNextDigestWindowStart(now, prefs, WEEKLY_DIGEST_CRON_SCHEDULE);
     const summary = summarizeWeeklyDigestCron(WEEKLY_DIGEST_CRON_SCHEDULE);
     if (!next) {
       return {
         summary,
-        ottawaWhen: null as string | null,
+        localWhen: null as string | null,
         utcTooltip: null as string | null,
       };
     }
-    const ottawaWhen = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Toronto",
+    const localWhen = new Intl.DateTimeFormat("en-CA", {
+      timeZone: prefs.digestTimezone,
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -219,10 +257,10 @@ export default function DashboardPage() {
     const utcTooltip = `Same instant: ${next.toISOString().replace("T", " ").slice(0, 16)} UTC (Vercel cron uses UTC)`;
     return {
       summary,
-      ottawaWhen,
+      localWhen,
       utcTooltip,
     };
-  }, [digestScheduleTick]);
+  }, [digestScheduleTick, digestWeekday, digestHour, digestMinute]);
 
   const summary = useMemo(() => {
     const totalSpent = postedRows.reduce((sum, tx) => sum + tx.amount, 0);
@@ -273,6 +311,46 @@ export default function DashboardPage() {
 
     setMonthlyBudget(rounded);
     setBudgetInput(String(rounded));
+  };
+
+  const handleSaveDigestSchedule = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const normalized = normalizeDigestPrefs({
+      digestWeekday,
+      digestHour,
+      digestMinute,
+      digestTimezone: DEFAULT_DIGEST_PREFS.digestTimezone,
+    });
+
+    setSavingDigestSchedule(true);
+    setLoadError(null);
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: session.user.id,
+          digest_weekday: normalized.digestWeekday,
+          digest_hour: normalized.digestHour,
+          digest_minute: normalized.digestMinute,
+          digest_timezone: normalized.digestTimezone,
+        },
+        { onConflict: "id" }
+      );
+
+    setSavingDigestSchedule(false);
+    if (error) {
+      setLoadError(error.message);
+      return;
+    }
+
+    setDigestWeekday(normalized.digestWeekday);
+    setDigestHour(normalized.digestHour);
+    setDigestMinute(normalized.digestMinute);
   };
 
   const handleSyncGmail = async () => {
@@ -556,10 +634,10 @@ export default function DashboardPage() {
             <p>Last Gmail sync: {new Date(lastSyncedAt).toLocaleString()}</p>
           ) : null}
           <p title={digestScheduleInfo.utcTooltip ?? undefined}>
-            <span className="font-medium text-slate-600">Next digest email:</span>{" "}
-            {digestScheduleInfo.ottawaWhen
-              ? `${digestScheduleInfo.ottawaWhen} (Ottawa)`
-              : "Estimate unavailable — verify cron in vercel.json."}{" "}
+            <span className="font-medium text-slate-600">Next digest (local time when job runs):</span>{" "}
+            {digestScheduleInfo.localWhen
+              ? `${digestScheduleInfo.localWhen} (Eastern — Ottawa/Toronto)`
+              : "Estimate unavailable — check digest schedule below and vercel.json."}{" "}
             <span className="text-slate-400" title={WEEKLY_DIGEST_CRON_SCHEDULE}>
               · {digestScheduleInfo.summary}
             </span>
@@ -647,6 +725,72 @@ export default function DashboardPage() {
               >
                 {savingBudget ? "Saving..." : "Save budget"}
               </button>
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h3 className="text-sm font-semibold text-slate-900">Weekly digest email</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Vercel runs this <strong>once per day</strong> ({digestScheduleInfo.summary}). The
+                email goes out on your chosen <strong>weekday</strong> when that run happens in
+                your timezone (America/Toronto). Hour and minute are kept for your records; the
+                actual send is aligned to the daily UTC time above.
+                <span className="block pt-1">
+                  <strong>Local dev:</strong> scheduled sends do not run on <code className="text-slate-700">npm run dev</code>{" "}
+                  — use <strong>Send digest email</strong> above to test.
+                </span>
+              </p>
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-xs text-slate-600">
+                  Day
+                  <select
+                    value={digestWeekday}
+                    onChange={(e) => setDigestWeekday(Number(e.target.value))}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800"
+                  >
+                    {DIGEST_DAY_OPTIONS.map((d) => (
+                      <option key={d.value} value={d.value}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-slate-600">
+                  Hour (0–23)
+                  <select
+                    value={digestHour}
+                    onChange={(e) => setDigestHour(Number(e.target.value))}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800"
+                  >
+                    {Array.from({ length: 24 }, (_, h) => (
+                      <option key={h} value={h}>
+                        {String(h).padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-slate-600">
+                  Minute
+                  <select
+                    value={digestMinute}
+                    onChange={(e) => setDigestMinute(Number(e.target.value))}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800"
+                  >
+                    {DIGEST_MINUTE_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        :{String(m).padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveDigestSchedule()}
+                  disabled={savingDigestSchedule}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {savingDigestSchedule ? "Saving..." : "Save digest schedule"}
+                </button>
+              </div>
             </div>
           </div>
         </section>

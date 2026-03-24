@@ -7,6 +7,10 @@ create table if not exists public.profiles (
   full_name text,
   avatar_url text,
   monthly_budget numeric(12,2) not null default 700 check (monthly_budget >= 0),
+  digest_weekday smallint not null default 0 check (digest_weekday >= 0 and digest_weekday <= 6),
+  digest_hour smallint not null default 9 check (digest_hour >= 0 and digest_hour <= 23),
+  digest_minute smallint not null default 0 check (digest_minute >= 0 and digest_minute <= 59),
+  digest_timezone text not null default 'America/Toronto',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -46,6 +50,7 @@ create table if not exists public.gmail_connections (
   oauth_redirect_uri text,
   history_id text,
   last_synced_at timestamptz,
+  weekly_digest_last_calendar_date text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

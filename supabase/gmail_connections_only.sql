@@ -60,4 +60,6 @@ before update on public.gmail_connections
 for each row
 execute function public.set_updated_at();
 
+alter table public.gmail_connections add column if not exists weekly_digest_last_calendar_date text;
+
 notify pgrst, 'reload schema';
