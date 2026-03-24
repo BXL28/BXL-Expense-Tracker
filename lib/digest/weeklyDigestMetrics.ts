@@ -1,0 +1,75 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export type DigestDateRange = {
+  weekStart: string;
+  weekEnd: string;
+  monthStart: string;
+  monthLabel: string;
+};
+
+export type WeeklyDigestMetrics = {
+  weeklyTotal: number;
+  monthlyTotal: number;
+  topCategory: string;
+  weeklyTxCount: number;
+};
+
+/** Last 7 calendar days (today minus 6 through today), aligned with the cron digest. */
+export function getDigestDateRange(now = new Date()): DigestDateRange {
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  return {
+    weekStart: weekStart.toISOString().slice(0, 10),
+    weekEnd: now.toISOString().slice(0, 10),
+    monthStart: monthStart.toISOString().slice(0, 10),
+    monthLabel: now.toLocaleString("en-US", { month: "long", year: "numeric" }),
+  };
+}
+
+export async function fetchWeeklyDigestMetrics(
+  supabase: SupabaseClient,
+  userId: string,
+  range: DigestDateRange
+): Promise<WeeklyDigestMetrics> {
+  const { data: weeklyTx } = await supabase
+    .from("transactions")
+    .select("amount,category,date,status")
+    .eq("user_id", userId)
+    .eq("status", "posted")
+    .gte("date", range.weekStart)
+    .lte("date", range.weekEnd);
+
+  const { data: monthlyTx } = await supabase
+    .from("transactions")
+    .select("amount,date,status")
+    .eq("user_id", userId)
+    .eq("status", "posted")
+    .gte("date", range.monthStart)
+    .lte("date", range.weekEnd);
+
+  const weeklyTotal = (weeklyTx ?? []).reduce(
+    (sum, tx) => sum + Number(tx.amount ?? 0),
+    0
+  );
+  const monthlyTotal = (monthlyTx ?? []).reduce(
+    (sum, tx) => sum + Number(tx.amount ?? 0),
+    0
+  );
+
+  const categoryTotals = (weeklyTx ?? []).reduce<Record<string, number>>((acc, tx) => {
+    const category = tx.category ?? "Other";
+    acc[category] = (acc[category] ?? 0) + Number(tx.amount ?? 0);
+    return acc;
+  }, {});
+  const topCategory =
+    Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "N/A";
+
+  return {
+    weeklyTotal,
+    monthlyTotal,
+    topCategory,
+    weeklyTxCount: (weeklyTx ?? []).length,
+  };
+}
