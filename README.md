@@ -44,6 +44,8 @@ Both routes require `x-cron-secret` header matching `CRON_SECRET`.
 
 **Daily ingest schedule:** `vercel.json` runs at **21:00 UTC** (`0 21 * * *`), which is **4:00 PM Eastern Standard Time** and **5:00 PM Eastern Daylight Time** — i.e. after 4 PM for most of the year in Eastern Canada. Vercel crons are UTC-only; change the cron expression if you use a different timezone.
 
+**Weekly digest schedule:** Currently **`*/15 * * * *`** (every 15 minutes) so you can verify email delivery quickly. This will send digest mail **often**; switch back to something like **`0 14 * * 0`** (weekly) in `vercel.json` once you are done testing.
+
 ## How data gets into the dashboard
 
 1. **Sign in** with Google (Supabase Auth) on `/login`.

@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         weeklyTotal: metrics.weeklyTotal,
         monthlyTotal: metrics.monthlyTotal,
         topCategory: metrics.topCategory,
+        categoryBreakdown: metrics.categoryBreakdown,
         weekStart: range.weekStart,
         weekEnd: range.weekEnd,
         monthLabel: range.monthLabel,

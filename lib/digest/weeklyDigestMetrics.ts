@@ -7,11 +7,18 @@ export type DigestDateRange = {
   monthLabel: string;
 };
 
+export type CategorySpendRow = {
+  category: string;
+  amount: number;
+};
+
 export type WeeklyDigestMetrics = {
   weeklyTotal: number;
   monthlyTotal: number;
   topCategory: string;
   weeklyTxCount: number;
+  /** Posted spend this week, sorted by amount (high → low). */
+  categoryBreakdown: CategorySpendRow[];
 };
 
 /** Last 7 calendar days (today minus 6 through today), aligned with the cron digest. */
@@ -63,13 +70,17 @@ export async function fetchWeeklyDigestMetrics(
     acc[category] = (acc[category] ?? 0) + Number(tx.amount ?? 0);
     return acc;
   }, {});
-  const topCategory =
-    Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "N/A";
+  const categoryBreakdown: CategorySpendRow[] = Object.entries(categoryTotals)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category));
+
+  const topCategory = categoryBreakdown[0]?.category ?? "N/A";
 
   return {
     weeklyTotal,
     monthlyTotal,
     topCategory,
     weeklyTxCount: (weeklyTx ?? []).length,
+    categoryBreakdown,
   };
 }
