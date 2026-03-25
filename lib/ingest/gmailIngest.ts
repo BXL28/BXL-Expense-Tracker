@@ -36,6 +36,10 @@ function normalizeTx(tx: ParsedTransaction): ParsedTransaction {
   };
 }
 
+function normalizeMerchantForMatch(merchant: string): string {
+  return merchant.trim().replace(/\s+/g, " ");
+}
+
 export async function ingestGmailForConnection(
   supabase: SupabaseClient,
   connection: GmailConnectionRow
@@ -94,16 +98,29 @@ export async function ingestGmailForConnection(
 
       for (const rawTx of parsed) {
         const tx = normalizeTx(rawTx);
+        const merchantForMatch = normalizeMerchantForMatch(tx.merchant);
         const hash = makeTransactionHash(connection.user_id, tx);
 
         const { data: existing } = await supabase
           .from("transactions")
-          .select("id,status")
+          .select("id,status,hash_id")
           .eq("user_id", connection.user_id)
           .eq("hash_id", hash)
           .maybeSingle();
 
-        if (existing && !shouldOverwriteExistingStatus(existing.status, tx.status)) {
+        // Backward-compatible duplicate guard: catch old rows hashed with a different strategy.
+        const { data: existingByMerchantAmount } = await supabase
+          .from("transactions")
+          .select("id,status,hash_id")
+          .eq("user_id", connection.user_id)
+          .ilike("merchant", merchantForMatch)
+          .eq("amount", tx.amount)
+          .limit(1)
+          .maybeSingle();
+
+        const duplicate = existing ?? existingByMerchantAmount;
+
+        if (duplicate && !shouldOverwriteExistingStatus(duplicate.status, tx.status)) {
           skipped += 1;
           continue;
         }
@@ -121,14 +138,16 @@ export async function ingestGmailForConnection(
           parse_confidence: tx.parseConfidence,
         };
 
-        const { error } = await supabase
-          .from("transactions")
-          .upsert(payload, { onConflict: "user_id,hash_id" });
+        const { error } = duplicate
+          ? await supabase.from("transactions").update(payload).eq("id", duplicate.id)
+          : await supabase
+              .from("transactions")
+              .upsert(payload, { onConflict: "user_id,hash_id" });
 
         if (error) {
           console.error("[ingestGmailForConnection] upsert failed:", error.message);
           upsertFailures += 1;
-        } else if (existing) {
+        } else if (duplicate) {
           updated += 1;
         } else {
           inserted += 1;

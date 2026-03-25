@@ -35,13 +35,18 @@ export function createGoogleOAuthClient(redirectUriOverride?: string | null) {
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-export function buildGoogleOAuthUrl(state: string, redirectUri: string) {
+export function buildGoogleOAuthUrl(
+  state: string,
+  redirectUri: string,
+  loginHint?: string
+) {
   const client = createGoogleOAuthClient(redirectUri);
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     scope: GMAIL_SCOPES,
     state,
+    ...(loginHint ? { login_hint: loginHint } : {}),
   });
 }
 

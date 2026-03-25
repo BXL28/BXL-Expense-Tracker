@@ -66,6 +66,7 @@ export default function DashboardPage() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
@@ -192,6 +193,7 @@ export default function DashboardPage() {
       }
 
       setUserId(session.user.id);
+      setUserEmail(session.user.email ?? null);
       setAuthReady(true);
       await Promise.all([loadTransactions(), loadGmailStatus(), loadMonthlyBudget()]);
     };
@@ -206,6 +208,7 @@ export default function DashboardPage() {
         return;
       }
       setUserId(session.user.id);
+      setUserEmail(session.user.email ?? null);
       void loadTransactions();
       void loadGmailStatus();
       void loadMonthlyBudget();
@@ -216,6 +219,23 @@ export default function DashboardPage() {
       subscription.unsubscribe();
     };
   }, [supabase, router, loadTransactions, loadGmailStatus, loadMonthlyBudget]);
+
+  useEffect(() => {
+    if (!authReady || !userId || gmailConnected !== false) return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("gmail_connect_attempted") === "1") return;
+
+    sessionStorage.setItem("gmail_connect_attempted", "1");
+    const params = new URLSearchParams({ user_id: userId });
+    if (userEmail) params.set("login_hint", userEmail);
+    window.location.assign(`${window.location.origin}/api/google/connect?${params.toString()}`);
+  }, [authReady, userId, userEmail, gmailConnected]);
+
+  useEffect(() => {
+    if (gmailConnected) {
+      sessionStorage.removeItem("gmail_connect_attempted");
+    }
+  }, [gmailConnected]);
 
   const postedRows = useMemo(
     () => transactions.filter((tx) => tx.status === "posted"),
@@ -547,7 +567,9 @@ export default function DashboardPage() {
 
   const connectHref =
     typeof window !== "undefined" && userId
-      ? `${window.location.origin}/api/google/connect?user_id=${userId}`
+      ? `${window.location.origin}/api/google/connect?user_id=${encodeURIComponent(userId)}${
+          userEmail ? `&login_hint=${encodeURIComponent(userEmail)}` : ""
+        }`
       : "";
 
   return (

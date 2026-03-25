@@ -13,7 +13,7 @@ export type ParsedTransaction = {
 export function makeTransactionHash(userId: string, tx: ParsedTransaction) {
   const normalizedMerchant = tx.merchant.trim().toLowerCase().replace(/\s+/g, " ");
   const amount = tx.amount.toFixed(2);
-  const input = `${userId}|${tx.date}|${normalizedMerchant}|${amount}`;
+  const input = `${userId}|${normalizedMerchant}|${amount}`;
   return createHash("sha256").update(input).digest("hex");
 }
 

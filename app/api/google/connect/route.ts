@@ -5,6 +5,7 @@ import { encodeSignedState } from "@/lib/security/state";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const userId = url.searchParams.get("user_id");
+  const loginHint = url.searchParams.get("login_hint") ?? undefined;
 
   if (!userId) {
     return NextResponse.json(
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
   });
 
   const redirectUri = new URL("/api/google/callback", request.url).href;
-  const authUrl = buildGoogleOAuthUrl(state, redirectUri);
+  const authUrl = buildGoogleOAuthUrl(state, redirectUri, loginHint);
   return NextResponse.redirect(authUrl);
 }
 
