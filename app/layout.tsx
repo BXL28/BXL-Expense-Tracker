@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BXL Expense Tracker",
   description: "Track bank email alerts and manage monthly spending.",
+  icons: {
+    icon: "/brand-logo.png",
+    apple: "/brand-logo.png",
+  },
 };
 
 export default function RootLayout({

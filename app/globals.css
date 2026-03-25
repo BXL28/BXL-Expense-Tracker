@@ -11,3 +11,7 @@ body {
 * {
   box-sizing: border-box;
 }
+
+::selection {
+  background-color: rgb(217 249 157 / 0.45);
+}

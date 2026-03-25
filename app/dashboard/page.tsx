@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Pencil, RefreshCw, ScanSearch, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { BrandMark } from "@/components/BrandMark";
 import {
   summarizeWeeklyDigestCron,
   WEEKLY_DIGEST_CRON_SCHEDULE,
@@ -576,11 +577,14 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Live data from Supabase. Incoming mail is parsed after you connect Gmail once.
-            </p>
+          <div className="flex items-start gap-3">
+            <BrandMark heightClass="h-12 sm:h-14" className="shrink-0" />
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Live data from Supabase. Incoming mail is parsed after you connect Gmail once.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -614,7 +618,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => void handleWeeklyDigestSend()}
               disabled={digestSending || !gmailConnected}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-bxl-moss bg-bxl-forest px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-bxl-moss disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
               {digestSending ? "Sending…" : "Send digest email"}
@@ -643,7 +647,7 @@ export default function DashboardPage() {
             {connectHref ? (
               <a
                 href={connectHref}
-                className="shrink-0 rounded-xl bg-amber-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-amber-950"
+                className="shrink-0 rounded-xl bg-bxl-forest px-4 py-2 text-center text-sm font-medium text-white shadow-sm hover:bg-bxl-moss"
               >
                 Connect Gmail
               </a>
@@ -682,7 +686,7 @@ export default function DashboardPage() {
         ) : null}
 
         {debugJson ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-900 p-4 text-slate-100 shadow-sm">
+          <div className="rounded-2xl border border-bxl-moss/30 bg-gradient-to-br from-bxl-forest to-bxl-forest-dark p-4 text-slate-100 shadow-sm">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{debugTitle}</p>
               <button
@@ -719,7 +723,7 @@ export default function DashboardPage() {
           <div className="mt-4">
             <div className="h-2 w-full rounded-full bg-slate-200">
               <div
-                className="h-2 rounded-full bg-slate-900 transition-all"
+                className="h-2 rounded-full bg-gradient-to-r from-bxl-moss to-bxl-accent transition-all"
                 style={{ width: `${summary.budgetPct}%` }}
               />
             </div>
@@ -909,7 +913,7 @@ export default function DashboardPage() {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <div className="rounded-xl border border-slate-200 border-l-2 border-l-bxl-moss bg-slate-50 p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
     </div>

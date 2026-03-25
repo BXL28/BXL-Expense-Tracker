@@ -7,7 +7,17 @@ const config: Config = {
     "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        bxl: {
+          forest: "#14532d",
+          "forest-dark": "#052e16",
+          moss: "#166534",
+          lime: "#d9f99d",
+          accent: "#84cc16",
+        },
+      },
+    },
   },
   plugins: [],
 };
