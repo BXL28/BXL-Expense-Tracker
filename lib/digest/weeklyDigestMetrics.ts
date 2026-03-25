@@ -21,15 +21,18 @@ export type WeeklyDigestMetrics = {
   categoryBreakdown: CategorySpendRow[];
 };
 
-/** Last 7 calendar days (today minus 6 through today), aligned with the cron digest. */
+/** Current Sunday-Saturday calendar week in UTC date space. */
 export function getDigestDateRange(now = new Date()): DigestDateRange {
   const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - 6);
+  const weekEnd = new Date(now);
+  const dow = now.getDay(); // Sun=0 ... Sat=6
+  weekStart.setDate(now.getDate() - dow);
+  weekEnd.setDate(weekStart.getDate() + 6);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   return {
     weekStart: weekStart.toISOString().slice(0, 10),
-    weekEnd: now.toISOString().slice(0, 10),
+    weekEnd: weekEnd.toISOString().slice(0, 10),
     monthStart: monthStart.toISOString().slice(0, 10),
     monthLabel: now.toLocaleString("en-US", { month: "long", year: "numeric" }),
   };
