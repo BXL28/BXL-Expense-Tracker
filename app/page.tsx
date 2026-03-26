@@ -1,214 +1,158 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
-import type { ReactNode } from "react";
-import {
-  ArrowRight,
-  CreditCard,
-  Lock,
-  Pencil,
-  PiggyBank,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowRight, PlayCircle, X } from "lucide-react";
 
-function PlaceholderImage({
+function ShowcaseImage({
   src,
   label,
+  description,
+  onOpen,
 }: {
   src: string;
   label: string;
-}) {
-  // Lightweight wrapper so the marketing page stays consistent.
-  return (
-    <figure className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt={label}
-        src={src}
-        className="h-56 w-full object-cover"
-      />
-      <figcaption className="absolute bottom-3 left-3 rounded-xl bg-slate-900/80 px-3 py-2 text-xs font-medium text-white">
-        {label}
-      </figcaption>
-    </figure>
-  );
-}
-
-function FeatureBlock({
-  icon,
-  eyebrow,
-  title,
-  description,
-  imageSrc,
-  imageLabel,
-}: {
-  icon: ReactNode;
-  eyebrow: string;
-  title: string;
-  description: string;
-  imageSrc: string;
-  imageLabel: string;
+  description?: string;
+  onOpen: (src: string, label: string) => void;
 }) {
   return (
-    <div className="grid gap-8 md:grid-cols-2 md:items-center">
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-bxl-moss/10 text-bxl-moss">
-            {icon}
-          </span>
-          {eyebrow}
-        </div>
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h2>
-        <p className="text-sm leading-relaxed text-slate-600">{description}</p>
-      </div>
-
-      <PlaceholderImage src={imageSrc} label={imageLabel} />
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() => onOpen(src, label)}
+        className="group block w-full text-left"
+      >
+        <figure className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 group-hover:-translate-y-1 group-hover:border-bxl-moss/60 group-hover:shadow-lg group-focus-visible:-translate-y-1 group-focus-visible:border-bxl-moss/60 group-focus-visible:shadow-lg">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={label}
+            src={src}
+            className="h-full w-full object-cover transition duration-200 group-hover:brightness-[1.03]"
+          />
+          <div className="pointer-events-none absolute inset-0 ring-0 transition duration-200 group-hover:ring-2 group-hover:ring-bxl-accent/60" />
+          <figcaption className="absolute bottom-3 left-3 rounded-xl bg-slate-900/80 px-3 py-2 text-xs font-medium text-white">
+            {label}
+          </figcaption>
+        </figure>
+      </button>
+      <p className="px-1 text-xs leading-relaxed text-slate-600">
+        {description ?? "Description placeholder text for this feature screenshot."}
+      </p>
     </div>
   );
 }
 
 export default function HomePage() {
+  const [lightbox, setLightbox] = useState<{ src: string; label: string } | null>(null);
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-6">
+      <header className="mx-auto flex w-full max-w-6xl items-center gap-4 px-6 py-6">
         <div className="flex items-center gap-3">
           <BrandMark heightClass="h-11 sm:h-12" />
           <div>
             <p className="text-sm font-semibold text-slate-800">BXL Expense Tracker</p>
-            <p className="text-xs text-slate-500">Email alerts to dashboard, budget, and digest</p>
+            <p className="text-xs text-slate-500">Built for my personal budgeting workflow</p>
           </div>
         </div>
+      </header>
 
-        <nav className="hidden items-center gap-3 sm:flex">
+      <section className="mx-auto w-full max-w-6xl px-6 pb-8 pt-2">
+        <div className="space-y-4 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+            BXL Expense Tracker
+          </h1>
+          <p className="mx-auto max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            I built this for personal use to turn Scotia alert emails into a clean dashboard with
+            budget tracking and a weekly recap email.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-10">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-bxl-moss/50 bg-gradient-to-br from-bxl-lime/20 to-white text-center sm:h-[360px]">
+            <PlayCircle className="mb-3 h-12 w-12 text-bxl-forest" />
+            <p className="text-lg font-semibold text-slate-900">Video demo placeholder</p>
+            <p className="mt-1 max-w-xl text-sm text-slate-600">
+              Upload your product walkthrough video here (full dashboard flow, sync, budget,
+              digest, and manual edit).
+            </p>
+          </div>
+          <p className="px-2 pb-1 pt-3 text-center text-xs font-medium text-slate-600 sm:text-sm">
+            Hero area reserved for your full demo video
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-14">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ShowcaseImage
+            src="/images/budget-tracker.png"
+            label="Budget tracker"
+            description="Placeholder: explain how monthly totals, top category, and budget progress bar help you track spending quickly."
+            onOpen={(src, label) => setLightbox({ src, label })}
+          />
+          <ShowcaseImage
+            src="/images/weekly-email.png"
+            label="Weekly email digest"
+            description="Placeholder: describe the automated weekly summary email and how it shows week totals and category breakdown."
+            onOpen={(src, label) => setLightbox({ src, label })}
+          />
+          <ShowcaseImage
+            src="/images/manual-editor.png"
+            label="Manual transaction editor"
+            description="Placeholder: highlight that you can manually edit categories or clean up rows directly in the dashboard."
+            onOpen={(src, label) => setLightbox({ src, label })}
+          />
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-14">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+          <p className="mb-4 text-sm text-slate-600">
+            Built for my own personal finances, now shared as a clean one-click workflow.
+          </p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-xl border border-bxl-moss/30 bg-white px-4 py-2 text-sm font-medium text-bxl-moss hover:bg-white/70"
+            className="inline-flex items-center gap-2 rounded-xl bg-bxl-forest px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-bxl-moss"
           >
             Try it
             <ArrowRight className="h-4 w-4" />
           </Link>
-        </nav>
-      </header>
+        </div>
+      </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-2">
-        <div className="grid gap-8 md:grid-cols-2 md:items-start">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-bxl-moss/10 text-bxl-moss">
-                <RefreshCw className="h-4 w-4" />
-              </span>
-              How it works (the setup I use)
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Scotia email alerts to an editable dashboard + a week-locked digest email.
-            </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-              I built this for my own budgeting: connect Gmail once, sync the Scotia “Last five
-              transactions” emails into transaction rows, set a monthly budget, and let the digest
-              email send automatically on a weekday (with week-to-week de-duping).
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-bxl-forest px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-bxl-moss"
-              >
-                Try it
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                See the dashboard
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <PlaceholderImage
-              src="/images/weekly-email-placeholder.svg"
-              label="Weekly digest email (placeholder)"
+      {lightbox ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4"
+          onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={lightbox.label}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-lg border border-slate-500/50 bg-slate-900/80 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800"
+            >
+              <X className="h-3.5 w-3.5" />
+              Close
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightbox.src}
+              alt={lightbox.label}
+              className="max-h-[90vh] w-full object-contain"
             />
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl space-y-16 px-6 pb-20">
-        <FeatureBlock
-          icon={<CreditCard className="h-4 w-4 text-bxl-moss" />}
-          eyebrow="If my bank emails daily"
-          title="Daily credit-card alerts to transaction rows"
-          description="Scotia sends a “Last five transactions” email. After I connect Gmail, BXL runs the daily ingest (or I hit “Sync from Gmail now”) and stores posted charges as transactions for the dashboard."
-          imageSrc="/images/dashboard-placeholder.svg"
-          imageLabel="Dashboard rows created from your emails"
-        />
-
-        <FeatureBlock
-          icon={<Pencil className="h-4 w-4 text-bxl-moss" />}
-          eyebrow="Then I clean it up"
-          title="Edit the dashboard (categories + delete)"
-          description="Every transaction row is editable: change the category from the dropdown or delete rows if something looks wrong. Changes write back to Supabase."
-          imageSrc="/images/dashboard-placeholder.svg"
-          imageLabel="Edit categories directly in the dashboard"
-        />
-
-        <FeatureBlock
-          icon={<PiggyBank className="h-4 w-4 text-bxl-moss" />}
-          eyebrow="I set the goal"
-          title="Set my monthly budget"
-          description="On the dashboard I enter a monthly budget number. BXL uses posted spend to calculate month-to-date totals and shows progress against the budget."
-          imageSrc="/images/budget-tracker-placeholder.svg"
-          imageLabel="Monthly budget progress tracker"
-        />
-
-        <FeatureBlock
-          icon={<Lock className="h-4 w-4 text-bxl-moss" />}
-          eyebrow="Finally, the email"
-          title="Weekly digest email (locked week-to-week)"
-          description="Vercel runs the digest job daily, but BXL only sends on the weekday I choose (America/Toronto) and at most once per local calendar day. It uses `gmail_connections.weekly_digest_last_calendar_date` to prevent duplicates, and the email totals use the current Sunday–Saturday week window plus month-to-date spend (so it stays aligned week-to-week)."
-          imageSrc="/images/weekly-email-placeholder.svg"
-          imageLabel="Automatic weekly spend email digest"
-        />
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-6 pb-14">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900">Want to try the flow?</p>
-              <p className="text-sm text-slate-600">
-                Sign in with Google, connect Gmail, then sync your Scotia “Last five transactions”
-                emails to see the dashboard + weekly digest.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-bxl-forest px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-bxl-moss"
-              >
-                Try it
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <BrandMark heightClass="h-10 sm:h-11" />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">BXL Expense Tracker</p>
-              <p className="text-xs text-slate-500">Dashboard + weekly email digests from Gmail alerts</p>
-            </div>
-          </div>
-          <div className="text-xs text-slate-500">
-            Built on Next.js, Supabase, and Gmail OAuth.
-          </div>
-        </div>
-      </footer>
+      ) : null}
     </main>
   );
 }

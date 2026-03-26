@@ -13,24 +13,29 @@ type DigestInput = {
 export function buildWeeklyDigestEmail(input: DigestInput) {
   const categoryLines =
     input.categoryBreakdown.length === 0
-      ? ["  (no posted transactions this week)"]
+      ? ["  - No posted transactions this week"]
       : input.categoryBreakdown.map(
-          (row) => `  • ${row.category}: $${row.amount.toFixed(2)}`
+          (row) => `  - ${row.category}: $${row.amount.toFixed(2)}`
         );
 
   return [
     "Hi,",
     "",
-    `Here is your BXL Expense Tracker summary for ${input.weekStart} to ${input.weekEnd}.`,
+    `BXL Weekly Spend Digest`,
+    `${input.weekStart} to ${input.weekEnd}`,
+    "----------------------------------------",
     "",
+    "Highlights",
     `- Weekly spend: $${input.weeklyTotal.toFixed(2)}`,
     `- Month-to-date spend (${input.monthLabel}): $${input.monthlyTotal.toFixed(2)}`,
-    `- Top category this week: ${input.topCategory}`,
+    `- Top category: ${input.topCategory}`,
     "",
-    "Spending by category (this week):",
+    "Spend by category",
     ...categoryLines,
     "",
-    "This digest uses posted transactions from your synced Scotia credit-card alerts.",
+    "Notes",
+    "- Based on posted transactions from synced Scotia credit-card alerts",
+    `- Week window: ${input.weekStart} to ${input.weekEnd} (Sun-Sat)`,
     "",
     "BXL Expense Tracker",
   ].join("\n");
