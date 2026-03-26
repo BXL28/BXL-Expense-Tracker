@@ -15,3 +15,33 @@ body {
 ::selection {
   background-color: rgb(217 249 157 / 0.45);
 }
+
+@keyframes feature-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes feature-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-feature-slide-in-right {
+  animation: feature-slide-in-right 280ms ease-out;
+}
+
+.animate-feature-slide-in-left {
+  animation: feature-slide-in-left 280ms ease-out;
+}
