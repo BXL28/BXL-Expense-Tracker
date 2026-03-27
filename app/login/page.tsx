@@ -22,6 +22,8 @@ export default function LoginPage() {
             typeof window !== "undefined"
               ? `${window.location.origin}/auth/callback`
               : undefined,
+          // Let users pick another Google account (otherwise Chrome often reuses the last one).
+          queryParams: { prompt: "select_account" },
         },
       });
 
