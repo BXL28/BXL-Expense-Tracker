@@ -1,8 +1,25 @@
 /**
- * Must match `vercel.json` → crons → path `/api/cron/weekly-digest` → schedule.
- * Vercel runs cron in UTC.
+ * Must match `vercel.json` → crons → path `/api/cron/weekly-digest` (two entries).
+ * Vercel runs cron in UTC. Two daily UTC hours so ~8:00 America/Toronto works year-round:
+ * - 12:00 UTC → 8:00 EDT / 7:00 EST
+ * - 13:00 UTC → 9:00 EDT / 8:00 EST
+ * - 14:00 UTC → 10:00 EDT / 9:00 EST
+ * `isUserDigestDue` matches the user's `digestHour` (America/Toronto) to exactly one tick.
  */
-export const WEEKLY_DIGEST_CRON_SCHEDULE = "0 13 * * *";
+export const WEEKLY_DIGEST_CRON_SCHEDULES = ["0 12 * * *", "0 13 * * *", "0 14 * * *"] as const;
+
+/** @deprecated Prefer WEEKLY_DIGEST_CRON_SCHEDULES; kept for single-schedule summaries. */
+export const WEEKLY_DIGEST_CRON_SCHEDULE = WEEKLY_DIGEST_CRON_SCHEDULES[0];
+
+/** Next time any weekly-digest cron fires (strictly after `now`). */
+export function getNextDigestCronUtcAfter(now: Date = new Date()): Date | null {
+  let best: Date | null = null;
+  for (const sched of WEEKLY_DIGEST_CRON_SCHEDULES) {
+    const next = getNextWeeklyDigestRunUtc(sched, now);
+    if (next && (!best || next.getTime() < best.getTime())) best = next;
+  }
+  return best;
+}
 
 /** Milliseconds between consecutive invocations for this schedule (for UI / simulations). */
 export function cronStepMilliseconds(schedule: string): number | null {
@@ -146,4 +163,10 @@ export function summarizeWeeklyDigestCron(
     return `${days[dow] ?? "Day"} ${pad(h)}:${pad(m)} UTC`;
   }
   return schedule;
+}
+
+/** Human-readable line for UTC slots (mapped to Eastern local hours via dashboard Hour). */
+export function summarizeWeeklyDigestCronSlots(): string {
+  const parts = WEEKLY_DIGEST_CRON_SCHEDULES.map((s) => summarizeWeeklyDigestCron(s));
+  return `${parts.join("; ")} (pick Hour 7–10 to match 12–14 UTC across EST/EDT)`;
 }

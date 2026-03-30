@@ -1,8 +1,4 @@
-import {
-  cronStepMilliseconds,
-  getNextWeeklyDigestRunUtc,
-  WEEKLY_DIGEST_CRON_SCHEDULE,
-} from "@/lib/digest/digestCronSchedule";
+import { getNextDigestCronUtcAfter } from "@/lib/digest/digestCronSchedule";
 
 export type UserDigestPrefs = {
   digestWeekday: number;
@@ -13,7 +9,7 @@ export type UserDigestPrefs = {
 
 export const DEFAULT_DIGEST_PREFS: UserDigestPrefs = {
   digestWeekday: 0,
-  digestHour: 9,
+  digestHour: 8,
   digestMinute: 0,
   digestTimezone: "America/Toronto",
 };
@@ -70,50 +66,42 @@ export function getZonedWeekdayHourMinute(now: Date, timeZone: string) {
     if (p.type !== "literal") m[p.type] = p.value;
   }
   const wd = DOW_MAP[m.weekday ?? ""] ?? 0;
-  const hour = parseInt(m.hour ?? "0", 10);
+  let hour = parseInt(m.hour ?? "0", 10);
+  if (hour === 24) hour = 0;
   const minute = parseInt(m.minute ?? "0", 10);
   return { weekday: wd, hour, minute };
 }
 
 
 /**
- * True when the digest runs on this UTC instant and it is the user's digest weekday
- * in their timezone. With a single daily global cron, local hour/minute cannot be honored
- * for everyone, so only the weekday gate is used for sending.
+ * True when this instant is one of the digest cron ticks (12/13/14 UTC → local Eastern time)
+ * and it matches the user's digest weekday and **hour** in `prefs.digestTimezone`.
+ * Minute is not enforced so Vercel’s “within the hour” jitter still counts as that hour.
  */
 export function isUserDigestDue(now: Date, prefs: UserDigestPrefs): boolean {
-  const { weekday } = getZonedWeekdayHourMinute(now, prefs.digestTimezone);
-  return weekday === prefs.digestWeekday;
+  const { weekday, hour } = getZonedWeekdayHourMinute(now, prefs.digestTimezone);
+  if (weekday !== prefs.digestWeekday) return false;
+  return hour === prefs.digestHour;
 }
 
-const FALLBACK_STEP_MS = 60 * 60 * 1000;
-
-/** Next cron tick strictly after `now` (aligned to digest cron schedule). */
-export function getNextCronTickAfter(
-  now: Date,
-  schedule: string = WEEKLY_DIGEST_CRON_SCHEDULE
-): Date | null {
-  let t = getNextWeeklyDigestRunUtc(schedule, now);
-  if (!t) return null;
-  const step = cronStepMilliseconds(schedule) ?? FALLBACK_STEP_MS;
-  while (t.getTime() <= now.getTime()) {
-    t = new Date(t.getTime() + step);
-  }
-  return t;
+/** Next digest cron instant strictly after `now` (12, 13, or 14 UTC daily). */
+export function getNextCronTickAfter(now: Date, _schedule?: string): Date | null {
+  return getNextDigestCronUtcAfter(now);
 }
 
-/** Next digest send instant: next cron tick after `now` that falls on the user's digest weekday (in their TZ). */
+/** Next digest send instant: next 12/13 UTC tick after `now` that matches weekday + hour in the user TZ. */
 export function getNextDigestWindowStart(
   now: Date,
   prefs: UserDigestPrefs,
-  schedule: string = WEEKLY_DIGEST_CRON_SCHEDULE
+  _schedule?: string
 ): Date | null {
-  let t = getNextCronTickAfter(now, schedule);
+  let t = getNextDigestCronUtcAfter(now);
   if (!t) return null;
-  const step = cronStepMilliseconds(schedule) ?? FALLBACK_STEP_MS;
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 800; i++) {
     if (isUserDigestDue(t, prefs)) return t;
-    t = new Date(t.getTime() + step);
+    const next = getNextDigestCronUtcAfter(new Date(t.getTime() + 1));
+    if (!next) return null;
+    t = next;
   }
   return null;
 }
