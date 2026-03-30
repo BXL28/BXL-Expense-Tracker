@@ -49,6 +49,9 @@ Both routes require `CRON_SECRET`: Vercel Cron sends `Authorization: Bearer <CRO
 
 **Local dev:** `npm run dev` does **not** receive Vercel Cron. Use the dashboard **Send digest email** button, or call the debug API, to test sending locally.
 
+**One-off production test (same as cron auth):** after deploy, once:  
+`GET /api/cron/weekly-digest?force_send=1` with `Authorization: Bearer <CRON_SECRET>`. Skips weekday / “already sent today” and does **not** update `weekly_digest_last_calendar_date`, so your real weekly slot is unchanged.
+
 After pulling digest-schedule changes, run new columns from [`supabase/patch_existing_tables.sql`](supabase/patch_existing_tables.sql) (or full [`supabase/schema.sql`](supabase/schema.sql)): `profiles.digest_*` and `gmail_connections.weekly_digest_last_calendar_date`.
 
 ## How data gets into the dashboard

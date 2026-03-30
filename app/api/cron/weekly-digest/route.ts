@@ -35,6 +35,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  /** Bypass weekday + “already sent today” so you can test with the same auth as Vercel Cron (Bearer CRON_SECRET). */
+  const forceSend = url.searchParams.get("force_send") === "1";
+
   const supabase = createServerSupabaseAdmin();
   const { data: connections, error } = await supabase.from("gmail_connections").select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -67,13 +71,14 @@ export async function GET(request: Request) {
 
     const prefs = prefsFromProfileRow(profileByUserId.get(String(connection.user_id)));
 
-    if (!isUserDigestDue(now, prefs)) {
+    if (!forceSend && !isUserDigestDue(now, prefs)) {
       skippedWrongSlot += 1;
       continue;
     }
 
     const todayInUserTz = getZonedCalendarDate(now, prefs.digestTimezone);
     if (
+      !forceSend &&
       todayInUserTz &&
       connection.weekly_digest_last_calendar_date === todayInUserTz
     ) {
@@ -104,7 +109,7 @@ export async function GET(request: Request) {
       await sendGmailMessage(gmail, connection.google_email, subject, body);
       sent += 1;
 
-      if (todayInUserTz) {
+      if (todayInUserTz && !forceSend) {
         await supabase
           .from("gmail_connections")
           .update({ weekly_digest_last_calendar_date: todayInUserTz })
@@ -127,6 +132,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     ok: true,
+    forceSend,
     attempted,
     sent,
     failed: failures.length,
