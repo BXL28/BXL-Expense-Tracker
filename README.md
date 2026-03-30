@@ -41,7 +41,7 @@ Long-term, moving the repo to a **non-synced** folder (e.g. `C:\dev\ExpenseTrack
 - Weekly digest:
   - `GET /api/cron/weekly-digest`
 
-Both routes require `x-cron-secret` header matching `CRON_SECRET`.
+Both routes require `CRON_SECRET`: Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; manual calls can use header `x-cron-secret: <CRON_SECRET>` instead.
 
 **Daily ingest schedule:** `vercel.json` runs at **21:00 UTC** (`0 21 * * *`), which is **4:00 PM Eastern Standard Time** and **5:00 PM Eastern Daylight Time** — i.e. after 4 PM for most of the year in Eastern Canada. Vercel crons are UTC-only; change the cron expression if you use a different timezone.
 
@@ -73,4 +73,4 @@ Or manually:
 
 ## Test weekly digest email (manual)
 
-On `/dashboard`: **Digest preview** (`GET /api/debug/weekly-digest`) builds the same email as the cron job without sending. **Send digest email** (`POST /api/debug/weekly-digest`) sends it once to your connected Gmail. Production cron still uses `GET /api/cron/weekly-digest` with header `x-cron-secret: <CRON_SECRET>`.
+On `/dashboard`: **Digest preview** (`GET /api/debug/weekly-digest`) builds the same email as the cron job without sending. **Send digest email** (`POST /api/debug/weekly-digest`) sends it once to your connected Gmail. Production cron uses `GET /api/cron/weekly-digest` with Vercel’s `Authorization: Bearer <CRON_SECRET>` (or `x-cron-secret` for manual tests).

@@ -38,10 +38,17 @@ export function decodeSignedState<T>(state: string): T {
   return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as T;
 }
 
+/**
+ * Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` when CRON_SECRET is set
+ * (see https://vercel.com/docs/cron-jobs/manage-cron-jobs). We also accept
+ * `x-cron-secret` for manual / non-Vercel callers (matches README examples).
+ */
 export function assertCronSecret(request: Request) {
   const expected = process.env.CRON_SECRET;
   if (!expected) throw new Error("Missing CRON_SECRET env var.");
-  const received = request.headers.get("x-cron-secret");
-  return received === expected;
+  const bearer = request.headers.get("authorization");
+  if (bearer === `Bearer ${expected}`) return true;
+  const header = request.headers.get("x-cron-secret");
+  return header === expected;
 }
 
