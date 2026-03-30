@@ -9,7 +9,7 @@ const BULLETS = [
   "Daily Scotiabank credit card alerts parsed straight from Gmail",
   "Transactions sync automatically — no manual entry needed",
   "Monthly budget tracker with category breakdown",
-  "Weekly debrief email sent to my inbox every Saturday",
+  "Weekly debrief email sent to inbox",
 ] as const;
 
 // pre-compute where each bullet starts in the flat char stream
@@ -24,19 +24,19 @@ const FEATURES = [
     src: "/images/budget-tracker.png",
     title: "Budget tracker",
     body:
-      "I track my monthly spend with posted totals, top category, and progress toward my budget all in one view.",
+      "Track monthly spend with posted totals, top category, and progress towards set budget all in one view.",
   },
   {
     src: "/images/weekly-email.png",
     title: "Weekly email digest",
     body:
-      "I get a weekly summary email with my spending totals and category breakdown so I can review at a glance.",
+      "Get a weekly summary email with spending totals and category breakdown for reviewing at a glance.",
   },
   {
     src: "/images/manual-editor.png",
     title: "Manual transaction editor",
     body:
-      "I clean up categories and transaction rows directly from the dashboard whenever I want finer control.",
+      "Cleans up categories and transaction rows directly from the dashboard for finer control",
   },
 ] as const;
 
@@ -111,7 +111,7 @@ export default function HomePage() {
                 Overview
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                How I use It
+                How to use It
               </h2>
               <ul className="mt-6 space-y-4">
                 {BULLETS.map((bullet, i) => {
