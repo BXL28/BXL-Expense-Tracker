@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Mail, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/BrandMark";
-import { summarizeWeeklyDigestCronSlots } from "@/lib/digest/digestCronSchedule";
+import {
+  summarizeWeeklyDigestCron,
+  WEEKLY_DIGEST_CRON_SCHEDULE,
+} from "@/lib/digest/digestCronSchedule";
 import {
   DEFAULT_DIGEST_PREFS,
   getNextDigestWindowStart,
@@ -210,8 +213,8 @@ export default function DashboardPage() {
     void digestScheduleTick;
     const now = new Date();
     const prefs = normalizeDigestPrefs({ digestWeekday, digestHour, digestMinute, digestTimezone: DEFAULT_DIGEST_PREFS.digestTimezone });
-    const next = getNextDigestWindowStart(now, prefs);
-    const summary = summarizeWeeklyDigestCronSlots();
+    const next = getNextDigestWindowStart(now, prefs, WEEKLY_DIGEST_CRON_SCHEDULE);
+    const summary = summarizeWeeklyDigestCron(WEEKLY_DIGEST_CRON_SCHEDULE);
     if (!next) return { summary, localWhen: null as string | null, utcTooltip: null as string | null };
     const localWhen = new Intl.DateTimeFormat("en-CA", { timeZone: prefs.digestTimezone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(next);
     const utcTooltip = `Same instant: ${next.toISOString().replace("T", " ").slice(0, 16)} UTC`;
@@ -446,7 +449,7 @@ export default function DashboardPage() {
           <div className="mt-6 border-t border-slate-200 pt-4">
             <h3 className="text-sm font-semibold text-slate-900">Weekly digest email</h3>
             <p className="mt-1 text-xs text-slate-500">
-              Vercel fires the job <strong>three times daily</strong> ({digestScheduleInfo.summary}). Email goes out on your chosen <strong>weekday</strong> when local time matches the <strong>Hour</strong> below (America/Toronto). Example: hour <strong>8</strong> → 13:00 UTC in winter (EST), 12:00 UTC in summer (EDT).
+              On the <strong>Hobby</strong> plan Vercel runs this <strong>once per day</strong> ({digestScheduleInfo.summary}) — multi-hour UTC schedules are not allowed. Email sends on your chosen <strong>weekday</strong> (America/Toronto) at that UTC time (~8 AM Eastern in winter, ~9 AM in summer). Hour/minute below are saved for display; exact local time requires <strong>Vercel Pro</strong> or an external scheduler.
             </p>
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <label className="flex flex-col gap-1 text-xs text-slate-600">
