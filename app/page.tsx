@@ -96,7 +96,7 @@ export default function HomePage() {
             <div className="h-full overflow-hidden">
               <video
                 className="h-full w-full object-cover"
-                src="/videos/demo-placeholder.mp4"
+                src="/videos/BXLExpenseTracker.mp4"
                 autoPlay
                 loop
                 muted

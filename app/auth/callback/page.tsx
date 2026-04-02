@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 /**
- * Handles Supabase OAuth return (PKCE / URL params). Use a single callback path
- * in Supabase → Authentication → Redirect URLs, e.g.
- * https://yoursite.vercel.app/auth/callback
+ * Handles the Supabase OAuth return for both PKCE and implicit flows.
+ *
+ * The Supabase JS v2 client processes the code/token in the URL automatically
+ * during initialization. onAuthStateChange always delivers the current auth
+ * state to new subscribers, so we just listen and redirect when ready.
+ * Calling getSession() or exchangeCodeForSession() here conflicts with that
+ * internal exchange and causes "code already used" failures.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -15,39 +19,27 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    let cancelled = false;
-    let timeoutId = 0;
+    let redirected = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (cancelled || !session?.user) return;
-      window.clearTimeout(timeoutId);
-      router.replace("/dashboard");
-    });
-
-    const run = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (cancelled) return;
-      if (session?.user) {
-        router.replace("/dashboard");
-        return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (redirected) return;
+        if (session?.user) {
+          redirected = true;
+          router.replace("/dashboard");
+        }
       }
-      setMessage("Almost there…");
-      timeoutId = window.setTimeout(() => {
-        if (cancelled) return;
-        void supabase.auth.getSession().then(({ data: { session: s } }) => {
-          if (cancelled) return;
-          router.replace(s?.user ? "/dashboard" : "/login");
-        });
-      }, 10_000);
-    };
+    );
 
-    void run();
+    const timeout = window.setTimeout(() => {
+      if (!redirected) {
+        setMessage("Something went wrong. Redirecting…");
+        window.setTimeout(() => router.replace("/login"), 1_000);
+      }
+    }, 6_000);
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
+      window.clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, [router]);

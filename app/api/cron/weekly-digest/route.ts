@@ -105,6 +105,7 @@ export async function GET(request: Request) {
         weekStart: range.weekStart,
         weekEnd: range.weekEnd,
         monthLabel: range.monthLabel,
+        weeksOfMonth: metrics.weeksOfMonth,
       });
       await sendGmailMessage(gmail, connection.google_email, subject, body);
       sent += 1;

@@ -67,6 +67,7 @@ export async function GET(request: Request) {
     weekStart: range.weekStart,
     weekEnd: range.weekEnd,
     monthLabel: range.monthLabel,
+    weeksOfMonth: metrics.weeksOfMonth,
   });
 
   return NextResponse.json({
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
     weekStart: range.weekStart,
     weekEnd: range.weekEnd,
     monthLabel: range.monthLabel,
+    weeksOfMonth: metrics.weeksOfMonth,
   });
 
   try {

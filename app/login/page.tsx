@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Chrome } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { createBrowserSupabaseClient } from "../../lib/supabase/client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Skip login if there's already a valid session
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) router.replace("/dashboard");
+    });
+  }, [router]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);

@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Mail, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, Mail, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/BrandMark";
 import {
@@ -337,6 +336,11 @@ export default function DashboardPage() {
     setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, category } : tx)));
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.replace("/login");
+  };
+
   const handleDelete = async (id: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
@@ -386,9 +390,14 @@ export default function DashboardPage() {
               <Send className="h-4 w-4" />
               {digestSending ? "Sending…" : "Send digest email"}
             </button>
-            <Link href="/login" className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-              Account
-            </Link>
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
           </div>
         </div>
 
