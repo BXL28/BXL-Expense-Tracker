@@ -8,6 +8,7 @@ export function isScotiaCreditCardAlert(subject: string | null | undefined, body
   const text = `${sub}\n${body}`.replace(/\s+/g, " ");
   const t = text.slice(0, 12000);
 
+  if (/\bday\s*[- ]?to\s*[- ]?day\b/i.test(sub)) return false;
   if (/\bvisa\s+debit\b/i.test(t)) return false;
 
   const subHasCreditCard = /\bcredit\s+card\b/i.test(sub);
