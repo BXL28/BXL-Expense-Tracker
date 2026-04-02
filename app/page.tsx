@@ -46,6 +46,14 @@ export default function HomePage() {
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const activeFeature = FEATURES[activeFeatureIdx];
 
+  // If Supabase redirected here instead of /auth/callback (redirect URL not
+  // in the allowed list), the auth tokens land in the hash. Forward them.
+  useEffect(() => {
+    if (window.location.hash.includes("access_token=")) {
+      window.location.replace("/auth/callback" + window.location.hash);
+    }
+  }, []);
+
   // typewriter state
   const [typedCount, setTypedCount] = useState(0);
 
