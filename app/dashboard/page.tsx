@@ -368,7 +368,7 @@ export default function DashboardPage() {
             <BrandMark heightClass="h-12 sm:h-14" className="shrink-0" />
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
-              <p className="mt-1 text-sm text-slate-600">Synced from Gmail. Edit categories or delete rows.</p>
+              <p className="mt-1 text-sm text-slate-600">Auto-syncs from Gmail daily at 6 PM ET. Edit categories or delete rows.</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -376,10 +376,11 @@ export default function DashboardPage() {
               type="button"
               onClick={() => void handleSyncGmail()}
               disabled={syncing || !gmailConnected}
+              title="Runs automatically at 6 PM ET — use this to sync on demand"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Syncing…" : "Sync from Gmail"}
+              {syncing ? "Syncing…" : "Manual sync"}
             </button>
             <button
               type="button"
@@ -419,7 +420,11 @@ export default function DashboardPage() {
 
         {/* ── Status line ── */}
         <div className="space-y-1 text-xs text-slate-500">
-          {gmailConnected && lastSyncedAt ? <p>Last Gmail sync: {new Date(lastSyncedAt).toLocaleString()}</p> : null}
+          <p>
+            <span className="font-medium text-slate-600">Auto-sync:</span>{" "}
+            <span>runs daily at 6 PM ET · manual sync available above</span>
+          </p>
+          {gmailConnected && lastSyncedAt ? <p>Last sync: {new Date(lastSyncedAt).toLocaleString()}</p> : null}
           <p title={digestScheduleInfo.utcTooltip ?? undefined}>
             <span className="font-medium text-slate-600">Next digest:</span>{" "}
             {digestScheduleInfo.localWhen ? `${digestScheduleInfo.localWhen} (Eastern)` : "—"}{" "}
@@ -490,7 +495,7 @@ export default function DashboardPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">Transactions</h2>
           {monthGroups.length === 0 ? (
-            <p className="text-sm text-slate-500">No transactions yet. Connect Gmail and sync.</p>
+            <p className="text-sm text-slate-500">No transactions yet. Connect Gmail — your expenses will appear automatically each day at 6 PM ET, or use Manual sync to pull them right now.</p>
           ) : (
             monthGroups.map(([monthKey, rows]) => {
               const posted = rows.filter((tx) => tx.status === "posted");

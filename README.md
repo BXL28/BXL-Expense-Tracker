@@ -43,7 +43,7 @@ Long-term, moving the repo to a **non-synced** folder (e.g. `C:\dev\ExpenseTrack
 
 Both routes require `CRON_SECRET`: Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; manual calls can use header `x-cron-secret: <CRON_SECRET>` instead.
 
-**Daily ingest schedule:** `vercel.json` runs at **21:00 UTC** (`0 21 * * *`), which is **4:00 PM Eastern Standard Time** and **5:00 PM Eastern Daylight Time** — i.e. after 4 PM for most of the year in Eastern Canada. Vercel crons are UTC-only; change the cron expression if you use a different timezone.
+**Daily ingest schedule:** `vercel.json` runs at **22:00 UTC** (`0 22 * * *`), which is **6:00 PM Eastern Daylight Time** (summer) and **5:00 PM Eastern Standard Time** (winter). This is the automatic daily parse — Gmail is scanned and the dashboard is updated without any manual action. A **Manual sync** button remains available on the dashboard if you want to pull transactions immediately at any time.
 
 **Weekly digest schedule:** **`0 13 * * *`** (13:00 UTC once per day). **Vercel Hobby** only allows cron expressions that run **at most once per day**; comma hour lists or multiple runs per day **fail deployment**. Sending uses **digest weekday** only in code; local clock hour from the dashboard is not applied on Hobby (see [`lib/digest/userDigestSlot.ts`](lib/digest/userDigestSlot.ts)). ~8:00 AM Eastern Standard / ~9:00 AM Eastern Daylight at 13 UTC. When you change `vercel.json`, update **`WEEKLY_DIGEST_CRON_SCHEDULE`** in [`lib/digest/digestCronSchedule.ts`](lib/digest/digestCronSchedule.ts). Deduping: **at most once per calendar day** in the user’s timezone (`gmail_connections.weekly_digest_last_calendar_date`). For precise multi-hour timing, use **Vercel Pro** or an external cron hitting the endpoint with `Authorization: Bearer <CRON_SECRET>`.
 
@@ -58,7 +58,7 @@ After pulling digest-schedule changes, run new columns from [`supabase/patch_exi
 
 1. **Sign in** with Google (Supabase Auth) on `/login`.
 2. **Connect Gmail** from the dashboard banner (or open `/api/google/connect?user_id=<your Auth UID>`). Use the **same Google account** that receives Scotia “Last five transactions” alerts.
-3. Click **Sync from Gmail now** (calls `POST /api/sync/gmail` with your session token) or wait for **Vercel Cron** (`/api/cron/daily-ingest`).
+3. Your transactions are updated **automatically every day at 6 PM ET** by Vercel Cron (`/api/cron/daily-ingest`). A **Manual sync** button is also available on the dashboard if you want to pull transactions on demand at any time.
 4. The spreadsheet on `/dashboard` reads from the `transactions` table; edits and deletes write back to Supabase.
 5. Users can set their own monthly budget directly on `/dashboard` (saved in `profiles.monthly_budget`).
 
